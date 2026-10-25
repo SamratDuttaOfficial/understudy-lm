@@ -1,0 +1,35 @@
+# pipeline data and outputs
+data/
+hf_cache/
+checkpoints/
+logs/
+out/
+state/
+downloads/
+.selftest/
+config.json
+
+# paper and agent notes
+paper/
+AGENTS.md
+agent.md
+agents.md
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# large or temporary files
+*.bin
+*.pt
+*.safetensors
+*.tmp
+*.log
+
+# editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

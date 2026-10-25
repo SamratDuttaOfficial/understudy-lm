@@ -1,0 +1,13 @@
+# Install torch FIRST with CUDA wheels (run.py will do this automatically):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+torch>=2.4
+numpy>=1.24
+transformers>=4.51
+datasets>=2.19
+safetensors>=0.4
+matplotlib>=3.8
+tqdm>=4.66
+
+# optional - only needed for `--set full_eval=true` (real wall-clock benchmark)
+# bitsandbytes>=0.43
+# accelerate>=0.30
