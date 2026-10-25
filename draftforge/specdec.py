@@ -1,7 +1,7 @@
 """Speculative-decoding evaluation.
 
 Fast path: replay greedy rounds over the target's own validation answers and
-time one draft round. Full path (full_eval=true): wall-clock bench vs a 4-bit 4B.
+time one draft round. Full path (full_eval=true): wall-clock bench vs the 4-bit target.
 """
 from __future__ import annotations
 import copy

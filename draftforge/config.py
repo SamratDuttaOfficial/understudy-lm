@@ -9,7 +9,7 @@ from .util import read_json, write_json, sha1
 
 @dataclass
 class Config:
-    # ---- target model (the 4B we are drafting for) -------------------------
+    # ---- target model (the one we draft for) --------------------------------
     target_ollama: str = "qwen3.5:4b"
     target_hf: str = "Qwen/Qwen3.5-4B"
 
@@ -38,15 +38,15 @@ class Config:
     val_fraction: float = 0.02
 
     # ---- general chat corpus for pretraining -------------------------------
-    # the 4B's ~20M tokens alone overfit, so pretraining mixes these in
+    # the target's ~20M tokens alone overfit, so pretraining mixes these in
     corpus_datasets: List[str] = field(default_factory=lambda: [
         "HuggingFaceTB/smoltalk",
         "allenai/tulu-3-sft-mixture",
     ])
-    corpus_tokens: int = 300_000_000      # 0 = pretrain on the 4B's data only
+    corpus_tokens: int = 300_000_000      # 0 = pretrain on the target's data only
 
     # ---- draft architecture ------------------------------------------------
-    # shares the target's 248K vocab: ~95M embedding, ~13M trunk
+    # shares the target's vocab; at 248K that is ~95M embedding, ~13M trunk
     d_model: int = 384
     n_layers: int = 8
     n_heads: int = 6
@@ -80,12 +80,12 @@ class Config:
     post_lr: float = 1.0e-4
     post_warmup: int = 100
     lookahead: int = 3            # train to predict t+1 .. t+lookahead
-    post_answers_only: bool = True  # learn only the 4B's answers, not the prompts
+    post_answers_only: bool = True  # learn only the target's answers, not the prompts
 
     # ---- evaluation --------------------------------------------------------
     spec_k: int = 4               # draft length per round (capped at 1 + lookahead heads)
     eval_seqs: int = 200
-    full_eval: bool = False       # load 4B in 4-bit for true wall-clock bench
+    full_eval: bool = False       # load the target in 4-bit for a wall-clock bench
     bench_prompts: int = 12
     bench_new_tokens: int = 128
 

@@ -179,7 +179,7 @@ def _bars(ax, names, vals, color, fmt) -> None:
 
 
 def _p_speedup(ctx: Ctx, ax) -> None:
-    ax.set_title("Projected speedup vs the 4B alone")
+    ax.set_title("Projected speedup vs the target alone")
     if not ctx.evals:
         _nodata(ax, "no eval runs yet")
         return

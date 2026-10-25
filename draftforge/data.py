@@ -82,7 +82,7 @@ def answer_mask(tokens, markers: dict) -> np.ndarray:
         j = int(i) + 1 + len(hdr)
         if tokens[i + 1: j].tolist() != hdr:
             continue
-        # skip the empty think block Qwen opens each answer with
+        # skip an empty think block at the start of the answer
         head = tokens[j: j + 8].tolist()
         if markers.get("think_end") in head:
             j += head.index(markers["think_end"]) + 1

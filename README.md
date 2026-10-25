@@ -1,16 +1,19 @@
 # understudy-lm
 
-A speculative-decoding draft model for **Qwen3.5-4B**, trained only on the text
-the 4B writes. Each pass it guesses the next four tokens; the 4B checks them in
-one step and keeps the ones it agrees with, so the output is unchanged.
+Train a speculative-decoding draft model from a target LLM's text alone: no
+logits, no hidden states, no smaller sibling model. The draft guesses the next
+four tokens in one pass; the target checks them in one step and keeps the ones
+it agrees with, so the output is unchanged.
+
+The released draft was trained for Qwen3.5-4B.
 
 ## Results
 
 | | Run 1 | Run 2 |
 |---|---|---|
-| Pretraining data | 4B answers only | 75% public chat + 25% 4B answers |
+| Pretraining data | target answers only | 75% public chat + 25% target answers |
 | Best validation loss | 3.68 (overfit after step 4K) | **3.16** (still falling at 12K) |
-| Tokens per 4B pass | 1.52 | **1.58** |
+| Tokens per target pass | 1.52 | **1.58** |
 | Projected speedup | 1.38x | **1.43x** |
 
 | Training loss | Acceptance per guess |
@@ -21,13 +24,13 @@ one step and keeps the ones it agrees with, so the output is unchanged.
 
 The speedup is projected from replayed acceptance and timed draft rounds. In
 llama.cpp, which drafts one token per pass and has to restore Qwen3.5's state
-after every rejection, the 4B ran slower with the draft (27 to 36 tok/s against
-69 tok/s), so realising it needs a runtime that uses the lookahead heads.
+after every rejection, the target ran slower with the draft (27 to 36 tok/s
+against 69 tok/s), so realising it needs a runtime that uses the lookahead heads.
 
 ## Weights
 
 On Hugging Face: [samratduttaofficial/understudy-lm](https://huggingface.co/samratduttaofficial/understudy-lm).
-It is a standard `LlamaForCausalLM` with the Qwen3.5 tokenizer, so no clone of
+It is a standard `LlamaForCausalLM` with its target's tokenizer, so no clone of
 this repo is needed:
 
 ```python
@@ -35,17 +38,19 @@ from transformers import AutoModelForCausalLM
 draft = AutoModelForCausalLM.from_pretrained("samratduttaofficial/understudy-lm")
 ```
 
-The model card shows how to use it as an assistant model for Qwen3.5-4B and how
-to get four guesses per pass from the lookahead heads. `python export_hf.py`
-rebuilds that checkpoint from a local training run.
+The model card shows how to use it as an assistant model and how to get four
+guesses per pass from the lookahead heads. Every Qwen3.5 model from 0.8B to 27B
+shares its vocabulary, so it loads for any of them; acceptance was measured
+only against the 4B. `python export_hf.py` rebuilds the checkpoint from a local
+training run.
 
 ## How it is trained
 
-1. **Generate:** Qwen3.5-4B (through Ollama) answers 40K prompts, giving 13.4M tokens.
+1. **Generate:** the target (through Ollama) answers 40K prompts, giving 13.4M tokens.
 2. **Corpus:** 305M tokens of public chat (SmolTalk, Tulu 3), minus those prompts.
-3. **Pretrain:** a 109M-parameter decoder on 75% corpus / 25% 4B answers, 12K steps.
-4. **Post-train:** add three lookahead heads, train on the 4B's answers only, 3K steps.
-5. **Evaluate:** replay greedy speculative decoding over held-out 4B answers.
+3. **Pretrain:** a 109M-parameter decoder on 75% corpus / 25% target answers, 12K steps.
+4. **Post-train:** add three lookahead heads, train on the target's answers only, 3K steps.
+5. **Evaluate:** replay greedy speculative decoding over held-out target answers.
 
 ## Run
 
@@ -55,10 +60,11 @@ Needs Python 3.10+ and an NVIDIA GPU.
 python run.py
 ```
 
-That one command installs dependencies, pulls the 4B, generates data, trains,
-evaluates and writes graphs. It resumes where it stopped, so Ctrl+C and run it
-again any time. Training peaks at about 4 GB of GPU memory with the defaults;
-on a smaller GPU, trade batch size for accumulation before the first run:
+That one command installs dependencies, pulls the target, generates data,
+trains, evaluates and writes graphs. It resumes where it stopped, so Ctrl+C and
+run it again any time. Training peaks at about 4 GB of GPU memory with the
+defaults; on a smaller GPU, trade batch size for accumulation before the first
+run:
 
 ```bash
 python run.py --set batch_size=4 --set grad_accum=16
@@ -70,6 +76,34 @@ python run.py --summary   # results
 python plots.py           # redraw graphs into out/plots
 python selftest.py        # 1-minute check of the whole pipeline
 ```
+
+## Other targets
+
+The target is two settings: an Ollama tag for generation and a Hugging Face id
+for the tokenizer. Set both before the first run:
+
+```bash
+python run.py --set target_ollama=<ollama tag> --set target_hf=<hf model id>
+```
+
+- **Vocabulary.** The draft uses the target's tokenizer, and its embedding is
+  most of its size: 12.6M parameters for a 32K vocabulary, 49M for Llama 3's
+  128K, 95M for Qwen3.5's 248K. A smaller vocabulary means a cheaper draft.
+- **Chat template.** Prompts are told apart from answers by ChatML markers
+  (`<|im_start|>assistant` ... `<|im_end|>`), as in Qwen and several other
+  families. Other templates need their markers in `chat_markers` in
+  `draftforge/data.py`.
+- **Larger targets.** A decode step grows with the target's size and the draft's
+  cost does not, so the same acceptance buys more: about 1.51x for a 9B and
+  1.56x for a 27B, with the step time scaled from the 4B. There is room for a
+  deeper draft. Generation takes longer, but mixing in the public corpus means
+  the same 13M generated tokens go further.
+- **Smaller targets.** The draft's fixed cost is a larger share of a short step:
+  about 1.30x for a 2B and almost nothing for a 0.8B. Shrink the output layer
+  first; the 32K most frequent token ids cover 96% of the validation text.
+
+These figures are projections from the 4B's measurements and assume the same
+1.58 tokens per pass. Only the 4B was measured.
 
 ## License
 

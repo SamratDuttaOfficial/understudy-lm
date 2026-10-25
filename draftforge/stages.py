@@ -431,7 +431,7 @@ def clean_tokenize(cfg) -> None:
 
 # ============================================================ 6. corpus ======
 def run_corpus(cfg, man: Manifest, reg: Registry) -> dict:
-    """Public chat conversations for pretraining; the 4B's data alone overfits."""
+    """Public chat conversations for pretraining; the target's data alone overfits."""
     pin_caches()
     import numpy as np
     from transformers import AutoTokenizer
@@ -439,7 +439,7 @@ def run_corpus(cfg, man: Manifest, reg: Registry) -> dict:
     from . import hfdata
 
     if cfg.corpus_tokens <= 0:
-        LOG.info("corpus_tokens=0 - pretraining will use the 4B's data only")
+        LOG.info("corpus_tokens=0 - pretraining will use the target's data only")
         return {"tokens": 0}
     tok = AutoTokenizer.from_pretrained(cfg.target_hf, cache_dir=str(P.hf))
     eos = tok.eos_token_id if tok.eos_token_id is not None else 0
@@ -509,7 +509,7 @@ def run_corpus(cfg, man: Manifest, reg: Registry) -> dict:
 
     if total == 0:
         LOG.warning("no corpus could be downloaded - pretraining will use the "
-                    "4B's data only")
+                    "target's data only")
     LOG.info("corpus: %s tokens", human_num(total))
     return {"tokens": total}
 
@@ -560,7 +560,7 @@ def run_pretrain(cfg, man: Manifest, reg: Registry) -> dict:
     rid, rdir = _resume_or_new("pretrain", man, _run_ident("pretrain", cfg, man))
     share = cfg.pretrain_corpus_share
     if share > 0 and token_count("corpus") < 1_000_000:
-        LOG.warning("no corpus on disk - pretraining on the 4B's data only")
+        LOG.warning("no corpus on disk - pretraining on the target's data only")
         share = 0.0
     metrics = P.metrics / (rid + ".jsonl")
     summ = train(cfg=cfg, run_dir=rdir, run_id=rid, max_steps=cfg.max_steps,
@@ -759,7 +759,7 @@ STAGES: List[Stage] = [
     Stage("env", "check deps, GPU, dirs", run_env, clean_env),
     Stage("models", "pull ollama target + tokenizer", run_models, clean_models, ("env",)),
     Stage("prompts", "download + dedup prompts", run_prompts, clean_prompts, ("env",)),
-    Stage("generate", "on-policy generation from the 4B", run_generate,
+    Stage("generate", "on-policy generation from the target", run_generate,
           clean_generate, ("models", "prompts")),
     Stage("tokenize", "encode to uint32 token bins", run_tokenize,
           clean_tokenize, ("generate",)),

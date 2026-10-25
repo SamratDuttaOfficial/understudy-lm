@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""draftforge - train a speculative-decoding draft model for Qwen3.5-4B.
+"""draftforge - train a speculative-decoding draft model from a target LLM's text.
 
 Resumable: run `python run.py` again and it continues where it stopped.
 """
@@ -110,7 +110,7 @@ def show_summary(cfg: Config, man: Manifest, reg: Registry) -> None:
             print("  acceptance       : " + ", ".join(
                 "t+%d %.3f" % (i + 1, v) for i, v in enumerate(ev["p_accept"])))
         if ev.get("tokens_per_round") is not None:
-            print("  tokens per round : %.2f  (%.2f accepted guesses + 1 from the 4B)"
+            print("  tokens per round : %.2f  (%.2f accepted guesses + 1 from the target)"
                   % (ev["tokens_per_round"], ev["expected_accepted"]))
         elif ev.get("expected_accepted") is not None:
             print("  expected run     : %.2f accepted/round" % ev["expected_accepted"])

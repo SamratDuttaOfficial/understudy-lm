@@ -154,7 +154,7 @@ def _train(*, cfg, run_dir: Path, run_id: str, max_steps: int, base_lr: float,
            metrics_file: Path, tag: str, corpus_share: float = 0.0,
            answer_markers: Optional[dict] = None) -> dict:
     """corpus_share: fraction of rows from the general corpus.
-    answer_markers: train and validate on the 4B's answers only."""
+    answer_markers: train and validate on the target's answers only."""
     device = pick_device(cfg.device)
     torch.manual_seed(cfg.seed)
     np.random.seed(cfg.seed)
@@ -190,7 +190,7 @@ def _train(*, cfg, run_dir: Path, run_id: str, max_steps: int, base_lr: float,
         train_ds = MixedDataset([(train_ds, 1 - corpus_share),
                                  (corpus, corpus_share)], cfg.seed)
         LOG.info("training rows: %.0f%% general corpus (%s tokens), %.0f%% "
-                 "the 4B's data", 100 * corpus_share, human_num(len(corpus)),
+                 "the target's data", 100 * corpus_share, human_num(len(corpus)),
                  100 * (1 - corpus_share))
 
     start_step, best_val, since_best = 0, float("inf"), 0
