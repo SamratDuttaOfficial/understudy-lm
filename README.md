@@ -39,10 +39,8 @@ draft = AutoModelForCausalLM.from_pretrained("samratduttaofficial/understudy-lm"
 ```
 
 The model card shows how to use it as an assistant model and how to get four
-guesses per pass from the lookahead heads. Every Qwen3.5 model from 0.8B to 27B
-shares its vocabulary, so it loads for any of them; acceptance was measured
-only against the 4B. `python export_hf.py` rebuilds the checkpoint from a local
-training run.
+guesses per pass from the lookahead heads. `python export_hf.py` rebuilds the
+checkpoint from a local training run.
 
 ## How it is trained
 
@@ -76,34 +74,6 @@ python run.py --summary   # results
 python plots.py           # redraw graphs into out/plots
 python selftest.py        # 1-minute check of the whole pipeline
 ```
-
-## Other targets
-
-The target is two settings: an Ollama tag for generation and a Hugging Face id
-for the tokenizer. Set both before the first run:
-
-```bash
-python run.py --set target_ollama=<ollama tag> --set target_hf=<hf model id>
-```
-
-- **Vocabulary.** The draft uses the target's tokenizer, and its embedding is
-  most of its size: 12.6M parameters for a 32K vocabulary, 49M for Llama 3's
-  128K, 95M for Qwen3.5's 248K. A smaller vocabulary means a cheaper draft.
-- **Chat template.** Prompts are told apart from answers by ChatML markers
-  (`<|im_start|>assistant` ... `<|im_end|>`), as in Qwen and several other
-  families. Other templates need their markers in `chat_markers` in
-  `draftforge/data.py`.
-- **Larger targets.** A decode step grows with the target's size and the draft's
-  cost does not, so the same acceptance buys more: about 1.51x for a 9B and
-  1.56x for a 27B, with the step time scaled from the 4B. There is room for a
-  deeper draft. Generation takes longer, but mixing in the public corpus means
-  the same 13M generated tokens go further.
-- **Smaller targets.** The draft's fixed cost is a larger share of a short step:
-  about 1.30x for a 2B and almost nothing for a 0.8B. Shrink the output layer
-  first; the 32K most frequent token ids cover 96% of the validation text.
-
-These figures are projections from the 4B's measurements and assume the same
-1.58 tokens per pass. Only the 4B was measured.
 
 ## License
 
