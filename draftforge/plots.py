@@ -17,8 +17,8 @@ from .util import LOG, read_json, read_jsonl, now_ts  # noqa: E402
 
 plt.rcParams.update({
     "figure.dpi": 130, "savefig.dpi": 130,
-    "font.size": 14, "axes.titlesize": 16, "axes.labelsize": 15,
-    "xtick.labelsize": 13, "ytick.labelsize": 13, "legend.fontsize": 12,
+    "font.size": 11, "axes.titlesize": 13, "axes.labelsize": 12,
+    "xtick.labelsize": 10.5, "ytick.labelsize": 10.5, "legend.fontsize": 10,
     "axes.grid": True, "grid.alpha": 0.25, "axes.spines.top": False,
     "axes.spines.right": False,
 })
@@ -138,10 +138,14 @@ def _p_gpu_mem(ctx: Ctx, ax) -> None:
     rows_of = lambda n: [r for r in ctx.train_rows(n) if r.get("gpu_mem_gb")]  # noqa: E731
     if not _lines(ctx, ax, rows_of, "gpu_mem_gb", lw=2):
         _nodata(ax, "no memory samples yet")
-    ax.axhline(6.0, ls="--", lw=1.5, color="#dc2626")
-    ax.text(0.02, 6.0, "6 GB card limit", color="#dc2626", ha="left",
-            va="bottom", transform=ax.get_yaxis_transform())
-    ax.set(xlabel="step", ylabel="GB", title="Peak GPU memory", ylim=(0, 6.8))
+    env = ((read_json(P.manifest, {}) or {}).get("stages", {}).get("env") or {})
+    total = (env.get("meta") or {}).get("vram_gb")
+    if total:
+        ax.axhline(total, ls="--", lw=1.5, color="#dc2626")
+        ax.text(0.02, total, "%.1f GB on this GPU" % total, color="#dc2626",
+                ha="left", va="bottom", transform=ax.get_yaxis_transform())
+        ax.set_ylim(0, total * 1.12)
+    ax.set(xlabel="step", ylabel="GB", title="Peak GPU memory")
 
 
 def _p_acceptance(ctx: Ctx, ax) -> None:
@@ -336,7 +340,7 @@ def make(only: List[str] | None = None, stamp: bool = False) -> List[Path]:
     for ax in flat[len(names):]:
         ax.axis("off")
     fig.get_layout_engine().set(h_pad=0.15, w_pad=0.15)
-    fig.suptitle("draftforge - %s" % now_ts(), fontsize=20, fontweight="bold")
+    fig.suptitle("draftforge - %s" % now_ts(), fontsize=16, fontweight="bold")
     dash = P.plots / ("dashboard" + suffix + ".png")
     fig.savefig(dash)
     plt.close(fig)
