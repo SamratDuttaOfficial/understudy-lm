@@ -19,6 +19,26 @@ one step and keeps the ones it agrees with, so the output is unchanged.
 | **Tokens produced per round** | **Projected speedup** |
 | ![Round tokens](assets/round_tokens.png) | ![Speedup](assets/speedup.png) |
 
+The speedup is projected from replayed acceptance and timed draft rounds. In
+llama.cpp, which drafts one token per pass and has to restore Qwen3.5's state
+after every rejection, the 4B ran slower with the draft (27 to 36 tok/s against
+69 tok/s), so realising it needs a runtime that uses the lookahead heads.
+
+## Weights
+
+On Hugging Face: [samratduttaofficial/understudy-lm](https://huggingface.co/samratduttaofficial/understudy-lm).
+It is a standard `LlamaForCausalLM` with the Qwen3.5 tokenizer, so no clone of
+this repo is needed:
+
+```python
+from transformers import AutoModelForCausalLM
+draft = AutoModelForCausalLM.from_pretrained("samratduttaofficial/understudy-lm")
+```
+
+The model card shows how to use it as an assistant model for Qwen3.5-4B and how
+to get four guesses per pass from the lookahead heads. `python export_hf.py`
+rebuilds that checkpoint from a local training run.
+
 ## How it is trained
 
 1. **Generate:** Qwen3.5-4B (through Ollama) answers 40K prompts, giving 13.4M tokens.
