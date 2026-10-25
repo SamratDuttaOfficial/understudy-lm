@@ -70,3 +70,7 @@ python run.py --summary   # results
 python plots.py           # redraw graphs into out/plots
 python selftest.py        # 1-minute check of the whole pipeline
 ```
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).
